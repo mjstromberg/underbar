@@ -115,7 +115,7 @@
     var res = [];
 
     _.each(collection, function(item, index, collection) {
-      res.push(iterator(item));
+      res.push(iterator(item, index, collection));
     });
 
     return res;
@@ -368,22 +368,15 @@
   // of that string. For example, _.sortBy(people, 'name') should sort
   // an array of people by their name.
   _.sortBy = function(collection, iterator) {
-    if (typeof iterator === 'string') {
-      return collection.sort(function(a, b) {
-        return a[iterator] - b[iterator];
-      });
-    } else {
-      var mapped = _.map(collection, function(item, index, collection) {
-        return {index: index, item: item, iterated: iterator.call(this, item)};
-      });
+    var iteratorIsString = typeof iterator === 'string';
 
-      var sorted = mapped.sort(function(a, b) {
-        if (a.iterated === b.iterated) return a.index > b.index ? 1 : -1;
-        else return a.iterated === undefined ? 1 : b.iterated === undefined ? 1 : a.iterated > b.iterated ? 1 : -1;
-      });
-
-      return _.pluck(sorted, 'item');
-    }
+    return _.pluck(_.map(collection, function(item, index, collection) {
+      return {index: index, item: item, iterated: iteratorIsString ? item[iterator] : iterator.call(this, item)};
+    }).sort(function(a, b) {
+      if (a.iterated === b.iterated) return a.index - b.index;
+      if (a.iterated === undefined || a.iterated > b.iterated) return 1;
+      return -1;
+    }), 'item');
   };
 
   // Zip together two or more arrays with elements of the same index
